@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#314524">
+    <title>AI Assistant</title>
+
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" type="image/png" href="/static/icons/icon-192.png">
+
+    <!-- Bootstrap -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        rel="stylesheet"
+    >
+
+    <style>
+    :root {
+        --primary: #213B2B;
+        --matter-green: #426B4F;
+        --sage-green: #A8C5A0;
+        --soft-mint: #E6F0E3;
+        --chat-bg: #F7F9F5;
+        --border-green: #D5E1D1;
+        --text-main: #26352A;
+        --text-muted: #687568;
+        --white: #FFFFFF;
+    }
+
+    /* ===== General Layout ===== */
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        background: var(--chat-bg);
+        color: var(--text-main);
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont,
+                     "Segoe UI", sans-serif;
+    }
+
+    .app-container {
+        max-width: 850px;
+        margin: auto;
+        padding: 32px 16px;
+    }
+
+    /* ===== Header ===== */
+    .app-title {
+        color: var(--primary);
+        font-weight: 750;
+        letter-spacing: -0.7px;
+    }
+
+    header p {
+        color: var(--text-muted) !important;
+    }
+
+    .welcome-icon {
+        font-size: 44px;
+        color: var(--matter-green);
+    }
+
+    /* ===== Main Chat Card ===== */
+    .chat-card {
+        background: var(--white);
+        border: 1px solid var(--border-green);
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 8px 28px rgba(33, 59, 43, 0.07) !important;
+    }
+
+    .chat-card .border-top {
+        border-color: var(--border-green) !important;
+    }
+
+    /* ===== Chat Conversation ===== */
+    #chat {
+        min-height: 200px;
+        max-height: 55vh;
+        overflow-y: auto;
+        padding: 22px;
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+        scrollbar-color: var(--sage-green) transparent;
+    }
+
+    #chat::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #chat::-webkit-scrollbar-thumb {
+        background: var(--sage-green);
+        border-radius: 10px;
+    }
+
+    .welcome {
+        text-align: center;
+        padding: 35px 10px;
+    }
+
+    .welcome h4 {
+        color: var(--primary);
+        font-weight: 650;
+    }
+
+    .welcome p {
+        color: var(--text-muted) !important;
+    }
+
+    /* ===== Search Suggestions ===== */
+    .suggestion {
+        display: block;
+        width: 100%;
+        height: 100%;
+        padding: 14px;
+        text-align: left;
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--primary);
+        background: var(--white);
+        border: 1px solid var(--border-green);
+        border-radius: 14px;
+        transition: background 0.2s ease,
+                    border-color 0.2s ease,
+                    transform 0.2s ease,
+                    box-shadow 0.2s ease;
+    }
+
+    .suggestion i {
+        color: var(--matter-green);
+    }
+
+    .suggestion:hover {
+        background: var(--soft-mint);
+        border-color: var(--matter-green);
+        box-shadow: 0 3px 10px rgba(33, 59, 43, 0.07);
+        transform: translateY(-2px);
+    }
+
+    .suggestion:focus-visible {
+        outline: 3px solid var(--sage-green);
+        outline-offset: 2px;
+    }
+
+    /* ===== Message Bubbles ===== */
+    .message {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 24px;
+    }
+
+    .message.user {
+        align-items: flex-end;
+    }
+
+    .message.assistant,
+    .message.error {
+        align-items: flex-start;
+    }
+
+    .message-label {
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .message-bubble {
+        max-width: 90%;
+        padding: 13px 17px;
+        border-radius: 17px;
+        overflow-wrap: anywhere;
+        line-height: 1.7;
+    }
+
+    /* User messages */
+    .user .message-bubble {
+        color: var(--white);
+        background: var(--primary);
+        border-bottom-right-radius: 5px;
+        white-space: pre-wrap;
+    }
+
+    /* AI messages */
+    .assistant .message-bubble {
+        color: var(--text-main);
+        background: var(--soft-mint);
+        border: 1px solid #DCE8D8;
+        border-bottom-left-radius: 5px;
+    }
+
+    /* Error messages */
+    .error .message-bubble {
+        color: #842727;
+        background: #FFF0EF;
+        border: 1px solid #F0CECA;
+        border-radius: 12px;
+    }
+
+    .message-time {
+        color: var(--text-muted);
+        font-size: 11px;
+        margin-top: 6px;
+        opacity: 0.85;
+    }
+
+    /* ===== Markdown Responses ===== */
+    .markdown-body {
+        overflow-wrap: anywhere;
+    }
+
+    .markdown-body h1,
+    .markdown-body h2,
+    .markdown-body h3,
+    .markdown-body h4,
+    .markdown-body h5,
+    .markdown-body h6 {
+        color: var(--primary);
+        font-weight: 700;
+        margin-top: 18px;
+        margin-bottom: 10px;
+    }
+
+    .markdown-body h1 {
+        font-size: 1.5rem;
+    }
+
+    .markdown-body h2 {
+        font-size: 1.3rem;
+    }
+
+    .markdown-body h3 {
+        font-size: 1.12rem;
+    }
+
+    .markdown-body p {
+        margin-bottom: 12px;
+    }
+
+    .markdown-body ul,
+    .markdown-body ol {
+        padding-left: 24px;
+        margin-bottom: 14px;
+    }
+
+    .markdown-body li {
+        margin-bottom: 5px;
+    }
+
+    .markdown-body blockquote {
+        margin: 12px 0;
+        padding: 10px 15px;
+        background: #EDF3E9;
+        border-left: 4px solid var(--matter-green);
+        border-radius: 0 8px 8px 0;
+    }
+
+    .markdown-body a {
+        color: #285D3B;
+        text-decoration-thickness: 1px;
+        overflow-wrap: anywhere;
+    }
+
+    .markdown-body a:hover {
+        color: var(--primary);
+    }
+
+    .markdown-body hr {
+        border-color: var(--border-green);
+        opacity: 1;
+    }
+
+    .markdown-body table {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        border-collapse: collapse;
+        margin: 12px 0;
+    }
+
+    .markdown-body th,
+    .markdown-body td {
+        padding: 8px 12px;
+        border: 1px solid var(--border-green);
+    }
+
+    .markdown-body th {
+        color: var(--primary);
+        background: #E3EDDF;
+    }
+
+    .markdown-body pre {
+        max-width: 100%;
+        overflow-x: auto;
+        padding: 15px;
+        border-radius: 12px;
+        background: #192C20;
+        color: #F1F6EF;
+        border: 1px solid #314B38;
+    }
+
+    .markdown-body pre code {
+        color: inherit;
+        background: transparent;
+        padding: 0;
+        overflow-wrap: normal;
+    }
+
+    .markdown-body :not(pre) > code {
+        padding: 2px 6px;
+        color: var(--primary);
+        background: #DCE8D8;
+        border-radius: 5px;
+        font-size: 0.9em;
+    }
+
+    .markdown-body > :first-child {
+        margin-top: 0;
+    }
+
+    .markdown-body > :last-child {
+        margin-bottom: 0;
+    }
+
+    /* ===== Message Composer ===== */
+    .card-body > .p-3 {
+        background: var(--white) !important;
+    }
+
+    .form-label {
+        color: var(--primary);
+        font-weight: 600;
+    }
+
+    .composer {
+        padding: 10px;
+        background: var(--white);
+        border: 1px solid var(--border-green);
+        border-radius: 18px;
+        transition: border-color 0.2s ease,
+                    box-shadow 0.2s ease;
+    }
+
+    .composer:focus-within {
+        border-color: var(--matter-green);
+        box-shadow: 0 0 0 3px rgba(66, 107, 79, 0.13);
+    }
+
+    #prompt {
+        width: 100%;
+        padding: 9px;
+        resize: none;
+        max-height: 160px;
+        overflow-y: auto;
+        border: none;
+        outline: none;
+        box-shadow: none;
+        background: transparent;
+        color: var(--text-main);
+        line-height: 1.6;
+    }
+
+    #prompt:focus {
+        border: none;
+        outline: none;
+        box-shadow: none;
+        background: transparent;
+    }
+
+    #prompt::placeholder {
+        color: #8A9587;
+    }
+
+    /* ===== Composer Buttons ===== */
+    .composer-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
+        padding: 4px;
+    }
+
+    .composer-actions .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 7px 15px;
+        border-radius: 999px;
+        font-weight: 600;
+        transition: background 0.2s ease,
+                    border-color 0.2s ease,
+                    transform 0.15s ease;
+    }
+
+    /* Clear button */
+    #clear {
+        color: var(--matter-green);
+        background: var(--white);
+        border: 1px solid var(--border-green);
+    }
+
+    #clear:hover:not(:disabled) {
+        color: var(--primary);
+        background: var(--soft-mint);
+        border-color: var(--sage-green);
+    }
+
+    /* Send button */
+    .btn-send {
+        color: var(--white);
+        background: var(--matter-green);
+        border: 1px solid var(--matter-green);
+    }
+
+    .btn-send:hover:not(:disabled) {
+        color: var(--white);
+        background: var(--primary);
+        border-color: var(--primary);
+    }
+
+    .composer-actions .btn:active:not(:disabled) {
+        transform: scale(0.97);
+    }
+
+    .composer-actions .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* ===== Character Count and Helper Text ===== */
+    #charCount,
+    .composer + .d-flex small {
+        color: var(--text-muted) !important;
+        font-size: 11px;
+    }
+
+    /* ===== Typing Indicator ===== */
+    .typing-dots {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 0;
+    }
+
+    .typing-dots span {
+        width: 7px;
+        height: 7px;
+        display: block;
+        background: var(--matter-green);
+        border-radius: 50%;
+        animation: greenBounce 1s infinite ease-in-out;
+    }
+
+    .typing-dots span:nth-child(2) {
+        animation-delay: 0.15s;
+    }
+
+    .typing-dots span:nth-child(3) {
+        animation-delay: 0.3s;
+    }
+
+    @keyframes greenBounce {
+        0%, 60%, 100% {
+            transform: translateY(0);
+            opacity: 0.55;
+        }
+
+        30% {
+            transform: translateY(-5px);
+            opacity: 1;
+        }
+    }
+
+    /* ===== Offline Alert ===== */
+    #offline {
+        color: #664D03;
+        background: #FFF5D6;
+        border-color: #E9D99F;
+        border-radius: 12px;
+    }
+
+    /* ===== Keyboard Focus ===== */
+    button:focus-visible {
+        outline: 3px solid var(--sage-green);
+        outline-offset: 3px;
+    }
+
+    /* ===== Footer ===== */
+    .app-container > p {
+        color: var(--text-muted) !important;
+    }
+
+    /* ===== Mobile Responsive ===== */
+    @media (max-width: 576px) {
+        .app-container {
+            padding: 20px 10px;
+        }
+
+        .app-title {
+            font-size: 1.8rem;
+        }
+
+        #chat {
+            min-height: 180px;
+            max-height: 52vh;
+            padding: 15px;
+        }
+
+        .welcome {
+            padding: 25px 4px;
+        }
+
+        .message-bubble {
+            max-width: 96%;
+            padding: 11px 13px;
+        }
+
+        .suggestion {
+            padding: 12px;
+        }
+
+        .composer {
+            padding: 7px;
+        }
+
+        .composer-actions .btn {
+            padding: 7px 12px;
+            font-size: 13px;
+        }
+
+        .markdown-body pre {
+            padding: 11px;
+            font-size: 12px;
+        }
+    }
+
+    /* ===== Reduced Motion Accessibility ===== */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            scroll-behavior: auto !important;
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="app-container">
+
+    <header class="text-center mb-4">
+        <h1 class="app-title">
+            <i class="bi bi-chat-square-text"></i>
+            AI Assistant
+        </h1>
+
+        <p class="text-secondary mb-0">
+            Ask questions, explore ideas, and learn something new.
+        </p>
+    </header>
+
+    <div id="offline" class="alert alert-warning d-none" role="status">
+        <i class="bi bi-wifi-off"></i>
+        You are offline. Connect to the internet to ask new questions.
+    </div>
+
+    <div class="card chat-card shadow-sm">
+
+        <div class="card-body p-0">
+
+            <!-- Conversation -->
+            <div
+                id="chat"
+                role="log"
+                aria-live="polite"
+                aria-label="Chat conversation"
+            >
+                <div id="welcome" class="welcome">
+                    <div class="welcome-icon mb-2">
+                        <i class="bi bi-stars"></i>
+                    </div>
+
+                    <h4>What can I help you with?</h4>
+
+                    <p class="text-secondary small mb-4">
+                        Choose a suggestion or type your own question.
+                    </p>
+
+                    <div class="row g-2 text-start">
+
+                        <div class="col-12 col-sm-6">
+                            <button
+                                type="button"
+                                class="suggestion w-100"
+                                data-prompt="Explain a difficult topic in simple terms."
+                            >
+                                <i class="bi bi-lightbulb me-2"></i>
+                                Explain a topic
+                            </button>
+                        </div>
+
+                        <div class="col-12 col-sm-6">
+                            <button
+                                type="button"
+                                class="suggestion w-100"
+                                data-prompt="Help me brainstorm ideas for a school project."
+                            >
+                                <i class="bi bi-journal-text me-2"></i>
+                                Brainstorm project ideas
+                            </button>
+                        </div>
+
+                        <div class="col-12 col-sm-6">
+                            <button
+                                type="button"
+                                class="suggestion w-100"
+                                data-prompt="Summarize a text and identify its main points."
+                            >
+                                <i class="bi bi-card-text me-2"></i>
+                                Summarize a text
+                            </button>
+                        </div>
+
+                        <div class="col-12 col-sm-6">
+                            <button
+                                type="button"
+                                class="suggestion w-100"
+                                data-prompt="Help me understand a Python programming concept with an example."
+                            >
+                                <i class="bi bi-code-slash me-2"></i>
+                                Learn Python
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input area -->
+            <div class="p-3 border-top bg-white">
+
+                <label for="prompt" class="form-label small fw-semibold">
+                    Your message
+                </label>
+
+                <div class="composer">
+
+                    <textarea
+                        id="prompt"
+                        class="form-control"
+                        rows="2"
+                        placeholder="Message your AI assistant..."
+                        aria-label="Type your message"
+                    ></textarea>
+
+                    <!-- Both buttons stay inside the composer -->
+                    <div class="composer-actions">
+
+                        <button
+                            id="clear"
+                            type="button"
+                            class="btn btn-outline-secondary btn-sm rounded-pill"
+                            title="Clear the input"
+                        >
+                            <i class="bi bi-x-lg"></i>
+                            Clear
+                        </button>
+
+                        <button
+                            id="send"
+                            type="button"
+                            class="btn btn-send btn-sm rounded-pill px-3"
+                        >
+                            <i class="bi bi-arrow-up"></i>
+                            Send
+                        </button>
+
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-2">
+                    <small class="text-secondary">
+                        Enter to send · Shift + Enter for a new line
+                    </small>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <p class="text-center text-secondary small mt-3">
+        AI responses may contain mistakes. Verify important information.
+    </p>
+
+</div>
+
+<!-- Markdown renderer and HTML sanitizer -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+
+<script>
+const promptBox = document.getElementById("prompt");
+const chat = document.getElementById("chat");
+const send = document.getElementById("send");
+const clear = document.getElementById("clear");
+const offline = document.getElementById("offline");
+const welcome = document.getElementById("welcome");
+
+let isSending = false;
+
+function updateConnection() {
+    offline.classList.toggle("d-none", navigator.onLine);
+}
+
+window.addEventListener("online", updateConnection);
+window.addEventListener("offline", updateConnection);
+updateConnection();
+
+function getCurrentTime() {
+    return new Date().toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit"
+    });
+}
+
+function scrollToBottom() {
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function hideWelcome() {
+    if (welcome) {
+        welcome.classList.add("d-none");
+    }
+}
+
+function addMessage(role, text, options = {}) {
+    hideWelcome();
+
+    const message = document.createElement("div");
+    message.className = "message " + role;
+
+    const label = document.createElement("div");
+    label.className = "message-label";
+
+    if (role === "user") {
+        label.textContent = "You";
+    } else if (role === "error") {
+        label.textContent = "Notice";
+    } else {
+        label.textContent = "AI Assistant";
+    }
+
+    const bubble = document.createElement("div");
+    bubble.className = "message-bubble";
+
+    if (options.typing) {
+        bubble.setAttribute("aria-label", "AI is thinking");
+
+        const typing = document.createElement("div");
+        typing.className = "typing-dots";
+
+        for (let i = 0; i < 3; i++) {
+            typing.appendChild(document.createElement("span"));
+        }
+
+        bubble.appendChild(typing);
+    } else if (role === "assistant") {
+        // Render Markdown, then sanitize the generated HTML.
+        const markdownHTML = marked.parse(text || "No response was generated.");
+
+        bubble.classList.add("markdown-body");
+        bubble.innerHTML = DOMPurify.sanitize(markdownHTML);
+    } else {
+        // User messages and errors are inserted as plain text.
+        bubble.textContent = text;
+    }
+
+    const time = document.createElement("div");
+    time.className = "message-time";
+    time.textContent = options.time || getCurrentTime();
+
+    message.appendChild(label);
+    message.appendChild(bubble);
+    message.appendChild(time);
+
+    chat.appendChild(message);
+    scrollToBottom();
+
+    return message;
+}
+
+
+document.querySelectorAll(".suggestion").forEach(button => {
+    button.addEventListener("click", () => {
+        promptBox.value = button.dataset.prompt;
+        promptBox.focus();
+    });
+});
+
+async function sendMessage() {
+    if (isSending) return;
+
+    const prompt = promptBox.value.trim();
+
+    if (!prompt) {
+        promptBox.focus();
+        return;
+    }
+
+    if (!navigator.onLine) {
+        addMessage(
+            "error",
+            "You are offline. Connect to the internet before asking a new question."
+        );
+        return;
+    }
+
+    if (prompt.length > 4000) {
+        addMessage("error", "Please limit your message to 4000 characters.");
+        return;
+    }
+
+    isSending = true;
+    send.disabled = true;
+    clear.disabled = true;
+
+    // Save the user's message and its timestamp.
+    const sentTime = getCurrentTime();
+    addMessage("user", prompt, { time: sentTime });
+
+    promptBox.value = "";
+
+    const typingMessage = addMessage("assistant", "", { typing: true });
+
+    try {
+        const response = await fetch("/ask/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            body: JSON.stringify({ prompt: prompt })
+        });
+
+        const contentType = response.headers.get("Content-Type") || "";
+
+        if (!contentType.includes("application/json")) {
+            throw new Error(
+                "Unexpected server response. Check your Django /ask/ endpoint."
+            );
+        }
+
+        const result = await response.json();
+        console.log("HTTP status:", response.status);
+        console.log("API result:", result);
+
+        if (!response.ok) {
+            throw new Error(result.error || "Unable to generate a response.");
+        }
+
+        // Replace the typing indicator with the formatted AI answer.
+        typingMessage.remove();
+        addMessage(
+            "assistant",
+            result.answer || "No response was generated."
+        );
+
+    } catch (error) {
+        typingMessage.remove();
+        addMessage("error", error.message || "Something went wrong.");
+    } finally {
+        isSending = false;
+        send.disabled = false;
+        clear.disabled = false;
+        promptBox.focus();
+        scrollToBottom();
+    }
+}
+
+send.addEventListener("click", sendMessage);
+
+clear.addEventListener("click", () => {
+    promptBox.value = "";
+    promptBox.focus();
+});
+
+promptBox.addEventListener("keydown", event => {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+
+        if (!isSending) {
+            sendMessage();
+        }
+    }
+});
+
+function getCookie(name) {
+    const cookies = document.cookie.split(";");
+
+    for (let cookie of cookies) {
+        cookie = cookie.trim();
+
+        if (cookie.startsWith(name + "=")) {
+            return decodeURIComponent(
+                cookie.substring(name.length + 1)
+            );
+        }
+    }
+
+    return "";
+}
+
+// Keep your existing PWA service worker registration.
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/service-worker.js")
+            .catch(error => console.error("Service worker error:", error));
+    });
+}
+</script>
+
+</body>
+</html>
